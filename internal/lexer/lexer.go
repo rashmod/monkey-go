@@ -31,6 +31,8 @@ func (lexer *Lexer) readCh() {
 }
 
 func (lexer *Lexer) NextToken() token.Token {
+	lexer.skipWhitespace()
+
 	var tok token.Token
 
 	switch lexer.ch {
@@ -66,6 +68,16 @@ func (lexer *Lexer) NextToken() token.Token {
 	lexer.readCh()
 
 	return tok
+}
+
+func (lexer *Lexer) skipWhitespace() {
+	for lexer.isWhitespace() {
+		lexer.readCh()
+	}
+}
+
+func (lexer *Lexer) isWhitespace() bool {
+	return lexer.ch == ' ' || lexer.ch == '\n' || lexer.ch == '\t' || lexer.ch == '\r'
 }
 
 func (lexer *Lexer) readIdentifier() string {
