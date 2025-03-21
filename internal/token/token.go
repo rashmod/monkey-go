@@ -23,10 +23,12 @@ const (
 	ASTERISK = "*"
 	SLASH    = "/"
 
-	BANG = "!"
-
-	LT = "<"
-	GT = ">"
+	// COMPARISON
+	BANG   = "!"
+	LT     = "<"
+	GT     = ">"
+	EQ     = "=="
+	NOT_EQ = "!="
 
 	// DELIMITERS
 	COMMA     = ","
