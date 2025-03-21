@@ -53,11 +53,33 @@ func (lexer *Lexer) NextToken() token.Token {
 	case 0:
 		tok.Literal = ""
 		tok.Type = token.EOF
+	default:
+		if isLetter(lexer.ch) {
+			tok.Literal = lexer.readIdentifier()
+			tok.Type = token.LookupIdent(tok.Literal)
+			return tok
+		} else {
+			tok = newToken(token.ILLEGAL, lexer.ch)
+		}
 	}
 
 	lexer.readCh()
 
 	return tok
+}
+
+func (lexer *Lexer) readIdentifier() string {
+	position := lexer.position
+
+	for isLetter(lexer.ch) {
+		lexer.readCh()
+	}
+
+	return lexer.input[position:lexer.position]
+}
+
+func isLetter(ch byte) bool {
+	return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ch == '_'
 }
 
 func newToken(toketype token.TokenType, ch byte) token.Token {
