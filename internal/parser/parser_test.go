@@ -7,7 +7,7 @@ import (
 	"github.com/rashmod/monkey-go/internal/lexer"
 )
 
-func TestLetStatement(t *testing.T) {
+func TestLetStatement(tester *testing.T) {
 	input := `
     let x = 5;
     let y = 10;
@@ -18,13 +18,14 @@ func TestLetStatement(t *testing.T) {
 	parser := New(lex)
 
 	program := parser.ParseProgram()
+	checkParserErrors(tester, parser)
 
 	if program == nil {
-		t.Fatalf("ParseProgram() returned nil")
+		tester.Fatalf("ParseProgram() returned nil")
 	}
 
 	if len(program.Statements) != 3 {
-		t.Fatalf("program.Statements does not contain 3 statements. got=%d", len(program.Statements))
+		tester.Fatalf("program.Statements does not contain 3 statements. got=%d", len(program.Statements))
 	}
 
 	tests := []struct {
@@ -35,36 +36,51 @@ func TestLetStatement(t *testing.T) {
 		{"foobar"},
 	}
 
-	for i, tt := range tests {
+	for i, test := range tests {
 		stmt := program.Statements[i]
-		if !testLetStatement(t, stmt, tt.expectedIdentifier) {
+		if !testLetStatement(tester, stmt, test.expectedIdentifier) {
 			return
 		}
 
 	}
 }
 
-func testLetStatement(t *testing.T, stmt ast.Statement, name string) bool {
+func testLetStatement(tester *testing.T, stmt ast.Statement, name string) bool {
 	if stmt.TokenLiteral() != "let" {
-		t.Errorf("token literal not 'let'. got=%q", stmt.TokenLiteral())
+		tester.Errorf("token literal not 'let'. got=%q", stmt.TokenLiteral())
 		return false
 	}
 
 	letStmt, ok := stmt.(*ast.LetStatement)
 	if !ok {
-		t.Errorf("stmt not *ast.LetStatement. got=%T", stmt)
+		tester.Errorf("stmt not *ast.LetStatement. got=%T", stmt)
 		return false
 	}
 
 	if letStmt.Name.Value != name {
-		t.Errorf("letStmt.Name.Value not '%s'. got=%s", name, letStmt.Name.Value)
+		tester.Errorf("letStmt.Name.Value not '%s'. got=%s", name, letStmt.Name.Value)
 		return false
 	}
 
 	if letStmt.Name.TokenLiteral() != name {
-		t.Errorf("letStmt.Name.TokenLiteral() not '%s'. got=%s", name, letStmt.Name.TokenLiteral())
+		tester.Errorf("letStmt.Name.TokenLiteral() not '%s'. got=%s", name, letStmt.Name.TokenLiteral())
 		return false
 	}
 
 	return true
+}
+
+func checkParserErrors(tester *testing.T, parser *Parser) {
+	errors := parser.Errors()
+
+	if len(errors) == 0 {
+		return
+	}
+
+	tester.Errorf("parser has %d errors", len(errors))
+	for _, err := range errors {
+		tester.Errorf("parser error: %s", err)
+	}
+
+	tester.FailNow()
 }
