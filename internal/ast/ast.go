@@ -35,6 +35,11 @@ type Identifier struct {
 	Value string
 }
 
+func (identifier *Identifier) expressionNode() {}
+func (identifier *Identifier) TokenLiteral() string {
+	return identifier.Token.Literal
+}
+
 type LetStatement struct {
 	Token token.Token // the token.LET token
 	Name  *Identifier
@@ -46,7 +51,12 @@ func (letStatement *LetStatement) TokenLiteral() string {
 	return letStatement.Token.Literal
 }
 
-func (identifier *Identifier) expressionNode() {}
-func (identifier *Identifier) TokenLiteral() string {
-	return identifier.Token.Literal
+type ReturnStatement struct {
+	Token       token.Token // the token.RETURN token
+	ReturnValue Expression
+}
+
+func (returnStatement *ReturnStatement) statementNode() {}
+func (returnStatement *ReturnStatement) TokenLiteral() string {
+	return returnStatement.Token.Literal
 }
