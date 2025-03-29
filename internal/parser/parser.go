@@ -14,15 +14,45 @@ type Parser struct {
 	peekToken token.Token
 
 	errors []string
+
+	prefixParseFns map[token.TokenType]prefixParseFn
+	infixParseFns  map[token.TokenType]infixParseFn
+}
+
+type (
+	prefixParseFn func() ast.Expression
+	infixParseFn  func(ast.Expression) ast.Expression
+)
+
+const (
+	_ int = iota
+	LOWEST
+	EQUALS      // ==
+	LESSGREATER // > or <
+	SUM         // +
+	PRODUCT     // *
+	PREFIX      // -X or !X
+	CALL        // myFunction(X)
+)
+
+func (parser *Parser) registerPrefix(tok token.TokenType, fn prefixParseFn) {
+	parser.prefixParseFns[tok] = fn
+}
+
+func (parser *Parser) registerInfix(tok token.TokenType, fn infixParseFn) {
+	parser.infixParseFns[tok] = fn
 }
 
 func New(lex *lexer.Lexer) *Parser {
-	p := &Parser{lex: lex, errors: []string{}}
+	parser := &Parser{lex: lex, errors: []string{}}
 
-	p.nextToken()
-	p.nextToken()
+	parser.prefixParseFns = make(map[token.TokenType]prefixParseFn)
+	parser.registerPrefix(token.IDENT, parser.parseIdentifiers)
 
-	return p
+	parser.nextToken()
+	parser.nextToken()
+
+	return parser
 }
 
 func (parser *Parser) nextToken() {
@@ -52,7 +82,7 @@ func (parser *Parser) parseStatement() ast.Statement {
 	case token.RETURN:
 		return parser.parseReturnStatement()
 	default:
-		return nil
+		return parser.parseExpressionStatement()
 	}
 }
 
@@ -88,6 +118,33 @@ func (parser *Parser) parseReturnStatement() *ast.ReturnStatement {
 	}
 
 	return stmt
+}
+
+func (parser *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	stmt := &ast.ExpressionStatement{Token: parser.curToken}
+
+	stmt.Expression = parser.parseExpression(LOWEST)
+
+	if parser.peekTokenIs(token.SEMICOLON) {
+		parser.nextToken()
+	}
+
+	return stmt
+}
+
+func (parser *Parser) parseExpression(precedence int) ast.Expression {
+	prefix := parser.prefixParseFns[parser.curToken.Type]
+	if prefix == nil {
+		return nil
+	}
+
+	leftExp := prefix()
+
+	return leftExp
+}
+
+func (parser *Parser) parseIdentifiers() ast.Expression {
+	return &ast.Identifier{Token: parser.curToken, Value: parser.curToken.Literal}
 }
 
 func (parser *Parser) expectPeek(tok token.TokenType) bool {
